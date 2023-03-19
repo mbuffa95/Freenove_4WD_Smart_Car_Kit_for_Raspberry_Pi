@@ -51,11 +51,31 @@ def region_of_interest(edges):
    cropped_edges = cv2.bitwise_and(edges, mask)
    return cropped_edges
 
+def detect_line_segments(cropped_edges):
+    # tuning min_threshold, minLineLength, maxLineGap is a trial and error process by hand
+    rho = 1  # distance precision in pixel, i.e. 1 pixel
+    angle = np.pi / 180  # angular precision in radian, i.e. 1 degree
+    min_threshold = 10  # minimal of votes
+    line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, 
+                                    np.array([]), minLineLength=8, maxLineGap=4)
+
+    return line_segments
+
+def display_lines(frame, lines, line_color=(0, 255, 0), line_width=10):
+    line_image = np.zeros_like(frame)
+    if lines is not None:
+        for line in lines:
+            for x1, y1, x2, y2 in line:
+                cv2.line(line_image, (x1, y1), (x2, y2), line_color, line_width)
+    line_image = cv2.addWeighted(frame, 0.8, line_image, 1, 1)
+    return line_image
 
 cv2.imshow("masked edges", masked_edges)
 cropped_img = region_of_interest(masked_edges)
 cv2.imshow("cropped image", cropped_img)
-
+line_segs = detect_line_segments(cropped_img)
+line_segs_img = display_lines(image, line_segs)
+cv2.imshow("detected lines", line_segs_img)
 
 '''rho = 1
 theta = np.pi/180
@@ -82,4 +102,5 @@ cv2.imwrite("masked_edges.png", masked_edges)
 cv2.imwrite("original.png", image)
 cv2.imwrite("gray.png", gray)
 cv2.imwrite("cropped.png", cropped_img)
+cv2.imwrite("line_segs.png", line_segs)
 cv2.waitKey(0)
