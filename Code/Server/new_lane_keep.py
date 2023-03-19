@@ -6,6 +6,12 @@ import matplotlib.pyplot as plt
 import os
 from picamera.array import PiRGBArray
 from picamera import PiCamera
+import servo
+
+servo = servo.Servo()
+
+servo.setServoPwm('0',90)
+servo.setServoPwm('1',90)
 
 # Read image 
 #image = cv2.imread('/home/mbuffa/test_img/test_images/exit-ramp.jpg', cv2.IMREAD_COLOR) # roadpng is the filename
@@ -35,8 +41,8 @@ def region_of_interest(edges):
 
    #crop out top portion of the screen
    polygon = np.array([[
-      (0, height * 1 / 2),
-      (width, height * 1 / 2),
+      (0, height * 2 / 3),
+      (width, height * 2 / 3),
       (width, height),
       (0, height),
    ]], np.int32)
@@ -74,6 +80,6 @@ cv2.imshow("final", combo)
 os.chdir("/home/mbuffa/Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi/Images")
 cv2.imwrite("masked_edges.png", masked_edges)
 cv2.imwrite("original.png", image)
-cv2.imwrite("gray.png", gray) 
+cv2.imwrite("gray.png", gray)
 cv2.imwrite("cropped.png", cropped_img)
 cv2.waitKey(0)
