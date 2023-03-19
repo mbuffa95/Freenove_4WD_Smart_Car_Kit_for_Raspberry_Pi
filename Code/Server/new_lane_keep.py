@@ -71,8 +71,9 @@ combo = cv2.addWeighted(color_edges, 0.8, line_image, 1, 0)
 cv2.imshow("final", combo)
 '''
 
-os.chdir("/home/mbuffa/img_out")
+os.chdir("/home/mbuffa/Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi/Images")
 cv2.imwrite("masked_edges.png", masked_edges)
 cv2.imwrite("original.png", image)
 cv2.imwrite("gray.png", gray) 
+cv2.imwrite("cropped.png", cropped_img)
 cv2.waitKey(0)
