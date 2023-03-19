@@ -41,8 +41,8 @@ def region_of_interest(edges):
 
    #crop out top portion of the screen
    polygon = np.array([[
-      (0, height * 2 / 3),
-      (width, height * 2 / 3),
+      (0, height * 7 / 10),
+      (width, height * 7 / 10),
       (width, height),
       (0, height),
    ]], np.int32)
