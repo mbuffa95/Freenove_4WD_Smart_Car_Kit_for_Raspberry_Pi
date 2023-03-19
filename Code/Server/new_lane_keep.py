@@ -13,6 +13,7 @@ servo = servo.Servo()
 
 servo.setServoPwm('0',90)
 servo.setServoPwm('1',90)
+crop_ratio = ( 13 / 20 )
 
 # Read image 
 #image = cv2.imread('/home/mbuffa/test_img/test_images/exit-ramp.jpg', cv2.IMREAD_COLOR) # roadpng is the filename
@@ -42,8 +43,8 @@ def region_of_interest(edges):
 
    #crop out top portion of the screen
    polygon = np.array([[
-      (0, height * 7 / 10),
-      (width, height * 7 / 10),
+      (0, height * crop_ratio),
+      (width, height * crop_ratio),
       (width, height),
       (0, height),
    ]], np.int32)
@@ -75,7 +76,7 @@ def make_points(frame, line):
     height, width, _ = frame.shape
     slope, intercept = line
     y1 = height  # bottom of the frame
-    y2 = int(y1 * 7 / 10)  # make points from middle of the frame down
+    y2 = int(y1 * crop_ratio)  # make points from middle of the frame down
 
     # bound the coordinates within the frame
     x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
@@ -168,5 +169,6 @@ cv2.imwrite("masked_edges.png", masked_edges)
 cv2.imwrite("original.png", image)
 cv2.imwrite("gray.png", gray)
 cv2.imwrite("cropped.png", cropped_img)
-cv2.imwrite("line_segs.png", line_segs)
+cv2.imshow("detected_lines.png", line_segs_img)
+cv2.imshow("lane_lines.png", lane_lines_img)
 cv2.waitKey(0)
