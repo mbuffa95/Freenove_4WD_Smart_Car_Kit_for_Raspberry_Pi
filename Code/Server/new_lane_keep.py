@@ -13,7 +13,7 @@ servo = servo.Servo()
 
 servo.setServoPwm('0',90)
 servo.setServoPwm('1',90)
-crop_ratio = ( 13 / 20 )
+crop_ratio = ( 14 / 20 )
 
 # Read image 
 #image = cv2.imread('/home/mbuffa/test_img/test_images/exit-ramp.jpg', cv2.IMREAD_COLOR) # roadpng is the filename
@@ -169,6 +169,6 @@ cv2.imwrite("masked_edges.png", masked_edges)
 cv2.imwrite("original.png", image)
 cv2.imwrite("gray.png", gray)
 cv2.imwrite("cropped.png", cropped_img)
-cv2.imshow("detected_lines.png", line_segs_img)
-cv2.imshow("lane_lines.png", lane_lines_img)
+cv2.imwrite("detected_lines.png", line_segs_img)
+cv2.imwrite("lane_lines.png", lane_lines_img)
 cv2.waitKey(0)
