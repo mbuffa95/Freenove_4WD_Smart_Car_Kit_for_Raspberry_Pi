@@ -29,7 +29,27 @@ low_threshold = 50
 high_threshold = 150
 masked_edges = cv2.Canny(image, low_threshold, high_threshold)
 
+def region_of_interest(edges):
+   height, width = edges.shape
+   mask = np.zeros_like(edges)
+
+   #crop out top portion of the screen
+   polygon = np.array([[
+      (0, height * 1 / 2),
+      (width, height * 1 / 2),
+      (width, height),
+      (0, height),
+   ]], np.int32)
+
+   cv2.fillPoly(mask, polygon, 255)
+   cropped_edges = cv2.bitwise_and(edges, mask)
+   return cropped_edges
+
+
 cv2.imshow("masked edges", masked_edges)
+cropped_img = region_of_interest(masked_edges)
+cv2.imshow("cropped image", cropped_img)
+
 
 '''rho = 1
 theta = np.pi/180
