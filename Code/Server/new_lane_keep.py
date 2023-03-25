@@ -131,6 +131,8 @@ def average_slope_intercept(frame, line_segments):
 
 
 
+
+
 cv2.imshow("masked edges", masked_edges)
 cropped_img = region_of_interest(masked_edges)
 
@@ -144,25 +146,14 @@ lane_lines = average_slope_intercept(image, line_segs)
 lane_lines_img = display_lines(image, lane_lines)
 cv2.imshow("lane lines", lane_lines_img)
 
-'''rho = 1
-theta = np.pi/180
-threshold = 1
-min_line_length = 10
-max_line_gap = 1
-line_image = np.copy(image)*0
-
-lines = cv2.HoughLinesP(masked_edges, rho, theta, threshold, np.array([]), min_line_length, max_line_gap)
-
-for line in lines:
-   for x1, y1, x2, y2 in line:
-      cv2.line(line_image,(x1,y1),(x2,y2),(255,0,0),10)
-
-color_edges = np.dstack((masked_edges, masked_edges, masked_edges))
-
-combo = cv2.addWeighted(color_edges, 0.8, line_image, 1, 0)
-
-cv2.imshow("final", combo)
-'''
+if lane_lines.count == 2:
+    # detected 2 lane lines
+    print('identified 2 lane lines')
+elif lane_lines.count == 1:
+    # only detected 1 lane line
+    print('identified 1 lane lines')
+else:
+    print('identified an invalid number of lane lines!!!')
 
 os.chdir("/home/mbuffa/Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi/Images")
 cv2.imwrite("masked_edges.png", masked_edges)
