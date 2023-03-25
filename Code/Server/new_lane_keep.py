@@ -4,6 +4,7 @@ import matplotlib.image as mpimg
 import time
 import matplotlib.pyplot as plt
 import os
+import math
 import logging
 from picamera.array import PiRGBArray
 from picamera import PiCamera
@@ -129,9 +130,33 @@ def average_slope_intercept(frame, line_segments):
 
     return lane_lines
 
+def calculate_steering_angle(x_offset, y_offset):
+    angle_to_mid_radian = math.atan(x_offset / y_offset)  # angle (in radian) to center vertical line
+    angle_to_mid_deg = int(angle_to_mid_radian * 180.0 / math.pi)  # angle (in degrees) to center vertical line
+    return angle_to_mid_deg + 90  # this is the steering angle needed by picar front wheel
 
+def display_heading_line(frame, steering_angle, line_color=(0, 0, 255), line_width=5 ):
+    heading_image = np.zeros_like(frame)
+    height, width, _ = frame.shape
 
+    # figure out the heading line from steering angle
+    # heading line (x1,y1) is always center bottom of the screen
+    # (x2, y2) requires a bit of trigonometry
 
+    # Note: the steering angle of:
+    # 0-89 degree: turn left
+    # 90 degree: going straight
+    # 91-180 degree: turn right 
+    steering_angle_radian = steering_angle / 180.0 * math.pi
+    x1 = int(width / 2)
+    y1 = height
+    x2 = int(x1 - height / 2 / math.tan(steering_angle_radian))
+    y2 = int(height / 2)
+
+    cv2.line(heading_image, (x1, y1), (x2, y2), line_color, line_width)
+    heading_image = cv2.addWeighted(frame, 0.8, heading_image, 1, 1)
+
+    return heading_image
 
 cv2.imshow("masked edges", masked_edges)
 cropped_img = region_of_interest(masked_edges)
@@ -146,14 +171,30 @@ lane_lines = average_slope_intercept(image, line_segs)
 lane_lines_img = display_lines(image, lane_lines)
 cv2.imshow("lane lines", lane_lines_img)
 
-if lane_lines.count == 2:
+height, width, _ = image.shape
+
+if len(lane_lines) == 2:
     # detected 2 lane lines
     print('identified 2 lane lines')
-elif lane_lines.count == 1:
+    _, _, left_x2, _ = lane_lines[0][0]
+    _, _, right_x2, _ = lane_lines[1][0]
+    mid = int(width / 2)
+    x_offset = (left_x2 + right_x2) / 2 - mid
+    y_offset = int(height / 2)
+elif len(lane_lines) == 1:
     # only detected 1 lane line
     print('identified 1 lane lines')
+    x1, _, x2, _ = lane_lines[0][0]
+    x_offset = x2 - x1
+    y_offset = int(height / 2)
+
+if len(lane_lines) == 1 or len(lane_lines) == 2:
+    steering_angle = calculate_steering_angle(x_offset, y_offset)
+    print('calculated steering angle: ', steering_angle)
+    heading_img = display_heading_line(lane_lines_img, steering_angle)
+    cv2.imshow("heading", heading_img)
 else:
-    print('identified an invalid number of lane lines!!!')
+    print('identified an invalid number of lane lines!!!: ', len(lane_lines)  )
 
 os.chdir("/home/mbuffa/Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi/Images")
 cv2.imwrite("masked_edges.png", masked_edges)
@@ -162,4 +203,5 @@ cv2.imwrite("gray.png", gray)
 cv2.imwrite("cropped.png", cropped_img)
 cv2.imwrite("detected_lines.png", line_segs_img)
 cv2.imwrite("lane_lines.png", lane_lines_img)
+cv2.imwrite("heading_img.png", heading_img)
 cv2.waitKey(0)
