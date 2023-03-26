@@ -130,11 +130,52 @@ def display_heading_line(frame, steering_angle, line_color=(0, 0, 255), line_wid
 
     return heading_image
 
-servo = servo.Servo()
+def stabilize_steering_angle(
+          curr_steering_angle, 
+          new_steering_angle, 
+          num_of_lane_lines, 
+          max_angle_deviation_two_lines=5, 
+          max_angle_deviation_one_lane=1):
+    """
+    Using last steering angle to stabilize the steering angle
+    if new angle is too different from current angle, 
+    only turn by max_angle_deviation degrees
+    """
+    if num_of_lane_lines == 2 :
+        # if both lane lines detected, then we can deviate more
+        max_angle_deviation = max_angle_deviation_two_lines
+    else :
+        # if only one lane detected, don't deviate too much
+        max_angle_deviation = max_angle_deviation_one_lane
+    
+    angle_deviation = new_steering_angle - curr_steering_angle
+    if abs(angle_deviation) > max_angle_deviation:
+        stabilized_steering_angle = int(curr_steering_angle
+            + max_angle_deviation * angle_deviation / abs(angle_deviation))
+    else:
+        stabilized_steering_angle = new_steering_angle
+    return stabilized_steering_angle
 
+def display_still(caption, frame):
+    if DISPLAY_STILLS:
+        cv2.imshow(caption, frame)
+    return
+
+def write_still(file_name, frame):
+    if WRITE_STILLS:
+        os.chdir("/home/mbuffa/Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi/Images")
+        cv2.imwrite(file_name, frame)
+    return
+
+
+DISPLAY_STILLS = True
+WRITE_STILLS = True
+
+servo = servo.Servo()
 servo.setServoPwm('0',90)
 servo.setServoPwm('1',90)
 crop_ratio = ( 14 / 20 )
+cur_steering_angle = 90 #assume starting out exactly in the middle of the lanes
 
 # Read image 
 #image = cv2.imread('/home/mbuffa/test_img/test_images/exit-ramp.jpg', cv2.IMREAD_COLOR) # roadpng is the filename
@@ -148,7 +189,7 @@ time.sleep(0.1)
 camera.capture(rawCapture, format="bgr")
 image = rawCapture.array
 
-cv2.imshow("orig", image)
+display_still("orig", image)
 
 # Convert the image to gray-scale
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -162,18 +203,18 @@ masked_edges = cv2.Canny(image, low_threshold, high_threshold)
 
 
 
-cv2.imshow("masked edges", masked_edges)
+display_still("masked edges", masked_edges)
 cropped_img = region_of_interest(masked_edges)
 
-cv2.imshow("cropped image", cropped_img)
+display_still("cropped image", cropped_img)
 
 line_segs = detect_line_segments(cropped_img)
 line_segs_img = display_lines(image, line_segs)
-cv2.imshow("detected lines", line_segs_img)
+display_still("detected lines", line_segs_img)
 
 lane_lines = average_slope_intercept(image, line_segs)
 lane_lines_img = display_lines(image, lane_lines)
-cv2.imshow("lane lines", lane_lines_img)
+display_still("lane lines", lane_lines_img)
 
 height, width, _ = image.shape
 
@@ -193,19 +234,35 @@ elif len(lane_lines) == 1:
     y_offset = int(height / 2)
 
 if len(lane_lines) == 1 or len(lane_lines) == 2:
-    steering_angle = calculate_steering_angle(x_offset, y_offset)
-    print('calculated steering angle: ', steering_angle)
-    heading_img = display_heading_line(lane_lines_img, steering_angle)
-    cv2.imshow("heading", heading_img)
-else:
-    print('identified an invalid number of lane lines!!!: ', len(lane_lines)  )
+    new_steering_angle = calculate_steering_angle(x_offset, y_offset)
+    new_stable_steering_angle = stabilize_steering_angle(cur_steering_angle, new_steering_angle, len(lane_lines))
+    
+    print('current steering angle: ', cur_steering_angle)
+    print('new steering angle: ', new_steering_angle)
+    print('new stable steering angle: ', new_stable_steering_angle)
 
-os.chdir("/home/mbuffa/Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi/Images")
-cv2.imwrite("masked_edges.png", masked_edges)
-cv2.imwrite("original.png", image)
-cv2.imwrite("gray.png", gray)
-cv2.imwrite("cropped.png", cropped_img)
-cv2.imwrite("detected_lines.png", line_segs_img)
-cv2.imwrite("lane_lines.png", lane_lines_img)
-cv2.imwrite("heading_img.png", heading_img)
+    if new_stable_steering_angle >= 88 and new_stable_steering_angle <= 92:
+        # desired heading is pretty straight
+        print('going straight')
+    elif new_stable_steering_angle > 45 and new_stable_steering_angle < 87:
+        print('turning left')
+    elif new_stable_steering_angle > 93 and new_stable_steering_angle < 135:
+        print('turning right')
+    else:
+        print('invalid new stable steering angle: ', new_stable_steering_angle)
+    
+    heading_img = display_heading_line(lane_lines_img, new_stable_steering_angle)
+    display_still("heading", heading_img)
+
+    cur_steering_angle = new_stable_steering_angle
+else:
+    print('identified an invalid number of lane lines', len(lane_lines), ', discarding this frame' )
+
+write_still("gray.png", gray)
+write_still("masked_edges.png", masked_edges)
+write_still("cropped.png", cropped_img)
+write_still("original.png", image)
+write_still("detected_lines.png", line_segs_img)
+write_still("lane_lines.png", lane_lines_img)
+write_still("heading_img.png", heading_img)
 cv2.waitKey(0)
