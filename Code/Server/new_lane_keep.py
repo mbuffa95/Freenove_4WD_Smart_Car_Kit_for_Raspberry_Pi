@@ -10,34 +10,6 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 import servo
 
-servo = servo.Servo()
-
-servo.setServoPwm('0',90)
-servo.setServoPwm('1',90)
-crop_ratio = ( 14 / 20 )
-
-# Read image 
-#image = cv2.imread('/home/mbuffa/test_img/test_images/exit-ramp.jpg', cv2.IMREAD_COLOR) # roadpng is the filename
-camera = PiCamera()
-rawCapture = PiRGBArray(camera)
-# allow the camera to warmup
-time.sleep(0.1)
-# grab an image from the camera
-camera.capture(rawCapture, format="bgr")
-image = rawCapture.array
-
-cv2.imshow("orig", image)
-
-# Convert the image to gray-scale
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-#kernel_size = 1
-#blur_gray = cv2.GaussianBlur(gray,(kernel_size, kernel_size), 0)
-
-low_threshold = 50
-high_threshold = 150
-masked_edges = cv2.Canny(image, low_threshold, high_threshold)
-
 def region_of_interest(edges):
    height, width = edges.shape
    mask = np.zeros_like(edges)
@@ -157,6 +129,38 @@ def display_heading_line(frame, steering_angle, line_color=(0, 0, 255), line_wid
     heading_image = cv2.addWeighted(frame, 0.8, heading_image, 1, 1)
 
     return heading_image
+
+servo = servo.Servo()
+
+servo.setServoPwm('0',90)
+servo.setServoPwm('1',90)
+crop_ratio = ( 14 / 20 )
+
+# Read image 
+#image = cv2.imread('/home/mbuffa/test_img/test_images/exit-ramp.jpg', cv2.IMREAD_COLOR) # roadpng is the filename
+camera = PiCamera()
+rawCapture = PiRGBArray(camera)
+# allow the camera to warmup
+time.sleep(0.1)
+
+
+# grab an image from the camera
+camera.capture(rawCapture, format="bgr")
+image = rawCapture.array
+
+cv2.imshow("orig", image)
+
+# Convert the image to gray-scale
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+#kernel_size = 1
+#blur_gray = cv2.GaussianBlur(gray,(kernel_size, kernel_size), 0)
+
+low_threshold = 50
+high_threshold = 150
+masked_edges = cv2.Canny(image, low_threshold, high_threshold)
+
+
 
 cv2.imshow("masked edges", masked_edges)
 cropped_img = region_of_interest(masked_edges)
