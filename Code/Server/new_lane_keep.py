@@ -10,7 +10,7 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 import servo
 import Motor
-import keyboard
+#import keyboard
 
 def region_of_interest(edges):
    height, width = edges.shape
@@ -203,6 +203,9 @@ time.sleep(0.1)
 
 frame = PiRGBArray(camera, size = (640,480))
 PWM= Motor.Motor()
+PWM.setMotorModel(0,0,0,0)
+
+PWM.setMotorModel(1000,1000,1000,1000)
 
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
@@ -261,13 +264,13 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         if new_stable_steering_angle >= 88 and new_stable_steering_angle <= 92:
             # desired heading is pretty straight
             print('going straight')
-            PWM.setMotorModel(1000,1000,1000,1000)
+            #PWM.setMotorModel(1000,1000,1000,1000)
         elif new_stable_steering_angle > 45 and new_stable_steering_angle < 87:
             print('turning left')
             #PWM.setMotorModel(250,250,1000,1000)       #Left 
         elif new_stable_steering_angle > 93 and new_stable_steering_angle < 135:
             print('turning right')
-            PWM.setMotorModel(1000,1000,250,250)       #Right 
+            #PWM.setMotorModel(1000,1000,250,250)       #Right 
         else:
             print('invalid new stable steering angle: ', new_stable_steering_angle)
         
@@ -288,7 +291,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 
     frame.truncate(0)
 
-    if cv2.waitKey(1) & 0xFF == ord('q') or keyboard.is_pressed("q"):
+    if cv2.waitKey(1) & 0xFF == ord('q'): #or keyboard.is_pressed("q"):
         cleanup()
         break
 
