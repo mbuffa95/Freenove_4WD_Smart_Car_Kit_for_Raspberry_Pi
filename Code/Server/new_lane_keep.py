@@ -262,13 +262,13 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         if new_stable_steering_angle >= 88 and new_stable_steering_angle <= 92:
             # desired heading is pretty straight
             print('going straight')
-            #PWM.setMotorModel(-1000,-1000,-1000,-1000)
+            PWM.setMotorModel(-750,-750,-750,-750)
         elif new_stable_steering_angle > 45 and new_stable_steering_angle < 87:
             print('turning left')
-            #PWM.setMotorModel(-250,-1000,-1000,-1000)       #Left 
+            PWM.setMotorModel(-100,-100,-750,-750)       #Left 
         elif new_stable_steering_angle > 93 and new_stable_steering_angle < 135:
             print('turning right')
-            #PWM.setMotorModel(-1000,-1000,-250,-1000)       #Right 
+            PWM.setMotorModel(-750,-750,-100,-100)       #Right 
         else:
             print('invalid new stable steering angle: ', new_stable_steering_angle)
 
