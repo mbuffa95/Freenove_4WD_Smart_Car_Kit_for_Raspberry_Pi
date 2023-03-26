@@ -180,8 +180,8 @@ def cleanup():
     cv2.destroyAllWindows()
     return
 
-DISPLAY_STILLS = True
-WRITE_STILLS = True
+DISPLAY_STILLS = False
+WRITE_STILLS = False
 
 servo = servo.Servo()
 servo.setServoPwm('0',90)
@@ -192,7 +192,9 @@ cur_steering_angle = 90 #assume starting out exactly in the middle of the lanes
 # Read image 
 #image = cv2.imread('/home/mbuffa/test_img/test_images/exit-ramp.jpg', cv2.IMREAD_COLOR) # roadpng is the filename
 camera = PiCamera()
-rawCapture = PiRGBArray(camera)
+camera.resolution = (640, 480)
+camera.framerate = 32
+rawCapture = PiRGBArray(camera, size=(640, 480))
 
 # allow the camera to warmup
 time.sleep(0.1)
