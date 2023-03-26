@@ -199,6 +199,8 @@ rawCapture = PiRGBArray(camera, size=(640, 480))
 # allow the camera to warmup
 time.sleep(0.1)
 
+frame = PiCamera.array.PiRGBArray(camera, size = (640,480))
+
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
     image = frame.array
@@ -277,6 +279,8 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     write_still("detected_lines.png", line_segs_img)
     write_still("lane_lines.png", lane_lines_img)
     write_still("heading_img.png", heading_img)
+
+    frame.truncate(0)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         cleanup()
