@@ -205,7 +205,7 @@ frame = PiRGBArray(camera, size = (640,480))
 PWM= Motor.Motor()
 PWM.setMotorModel(0,0,0,0)
 
-PWM.setMotorModel(1000,1000,1000,1000)
+PWM.setMotorModel(-1000,-1000,-1000,-1000)
 
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
