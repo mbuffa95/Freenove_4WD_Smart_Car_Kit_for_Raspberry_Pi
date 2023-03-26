@@ -34,7 +34,7 @@ def detect_line_segments(cropped_edges):
     angle = np.pi / 180  # angular precision in radian, i.e. 1 degree
     min_threshold = 10  # minimal of votes
     line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, 
-                                    np.array([]), minLineLength=8, maxLineGap=4)
+                                    np.array([]), minLineLength=115, maxLineGap=20)
 
     return line_segments
 
@@ -205,8 +205,6 @@ frame = PiRGBArray(camera, size = (640,480))
 PWM= Motor.Motor()
 PWM.setMotorModel(0,0,0,0)
 
-PWM.setMotorModel(-1000,-1000,-1000,-1000)
-
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
     image = frame.array
@@ -264,17 +262,17 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         if new_stable_steering_angle >= 88 and new_stable_steering_angle <= 92:
             # desired heading is pretty straight
             print('going straight')
-            #PWM.setMotorModel(1000,1000,1000,1000)
+            #PWM.setMotorModel(-1000,-1000,-1000,-1000)
         elif new_stable_steering_angle > 45 and new_stable_steering_angle < 87:
             print('turning left')
-            #PWM.setMotorModel(250,250,1000,1000)       #Left 
+            #PWM.setMotorModel(-250,-1000,-1000,-1000)       #Left 
         elif new_stable_steering_angle > 93 and new_stable_steering_angle < 135:
             print('turning right')
-            #PWM.setMotorModel(1000,1000,250,250)       #Right 
+            #PWM.setMotorModel(-1000,-1000,-250,-1000)       #Right 
         else:
             print('invalid new stable steering angle: ', new_stable_steering_angle)
-        
-        heading_img = display_heading_line(lane_lines_img, new_stable_steering_angle)
+
+        heading_img = display_heading_line(line_segs_img, new_stable_steering_angle)
         display_still("heading", heading_img)
 
         cur_steering_angle = new_stable_steering_angle
@@ -289,6 +287,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     write_still("lane_lines.png", lane_lines_img)
     write_still("heading_img.png", heading_img)
 
+    cv2.imshow('heading', heading_img)
     frame.truncate(0)
 
     if cv2.waitKey(1) & 0xFF == ord('q'): #or keyboard.is_pressed("q"):
