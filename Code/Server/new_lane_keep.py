@@ -9,6 +9,7 @@ import logging
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import servo
+import Motor
 
 def region_of_interest(edges):
    height, width = edges.shape
@@ -199,7 +200,8 @@ rawCapture = PiRGBArray(camera, size=(640, 480))
 # allow the camera to warmup
 time.sleep(0.1)
 
-frame = PiRGBArray(camera, size = (640,480))
+frame = PiCamera.array.PiRGBArray(camera, size = (640,480))
+PWM=Motor()
 
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
@@ -258,10 +260,13 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         if new_stable_steering_angle >= 88 and new_stable_steering_angle <= 92:
             # desired heading is pretty straight
             print('going straight')
+            PWM.setMotorModel(200,200,200,200)
         elif new_stable_steering_angle > 45 and new_stable_steering_angle < 87:
             print('turning left')
+            PWM.setMotorModel(-50,-50,200,200)       #Left 
         elif new_stable_steering_angle > 93 and new_stable_steering_angle < 135:
             print('turning right')
+            PWM.setMotorModel(200,200,-50,-50)       #Right 
         else:
             print('invalid new stable steering angle: ', new_stable_steering_angle)
         
