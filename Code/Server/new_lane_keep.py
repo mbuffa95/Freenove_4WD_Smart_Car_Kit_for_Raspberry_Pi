@@ -167,6 +167,18 @@ def write_still(file_name, frame):
         cv2.imwrite(file_name, frame)
     return
 
+def cleanup():
+    """ Reset the hardware"""
+    logging.info('Stopping the car, resetting hardware.')
+    '''self.back_wheels.speed = 0
+    self.front_wheels.turn(90)
+    self.camera.release()
+    self.video_orig.release()
+    self.video_lane.release()
+    self.video_objs.release()'''
+    
+    cv2.destroyAllWindows()
+    return
 
 DISPLAY_STILLS = True
 WRITE_STILLS = True
@@ -181,88 +193,90 @@ cur_steering_angle = 90 #assume starting out exactly in the middle of the lanes
 #image = cv2.imread('/home/mbuffa/test_img/test_images/exit-ramp.jpg', cv2.IMREAD_COLOR) # roadpng is the filename
 camera = PiCamera()
 rawCapture = PiRGBArray(camera)
+
 # allow the camera to warmup
 time.sleep(0.1)
 
+for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
-# grab an image from the camera
-camera.capture(rawCapture, format="bgr")
-image = rawCapture.array
+    image = frame.array
 
-display_still("orig", image)
+    display_still("orig", image)
 
-# Convert the image to gray-scale
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Convert the image to gray-scale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-#kernel_size = 1
-#blur_gray = cv2.GaussianBlur(gray,(kernel_size, kernel_size), 0)
+    #kernel_size = 1
+    #blur_gray = cv2.GaussianBlur(gray,(kernel_size, kernel_size), 0)
 
-low_threshold = 50
-high_threshold = 150
-masked_edges = cv2.Canny(image, low_threshold, high_threshold)
+    low_threshold = 50
+    high_threshold = 150
+    masked_edges = cv2.Canny(image, low_threshold, high_threshold)
 
+    display_still("masked edges", masked_edges)
+    cropped_img = region_of_interest(masked_edges)
 
+    display_still("cropped image", cropped_img)
 
-display_still("masked edges", masked_edges)
-cropped_img = region_of_interest(masked_edges)
+    line_segs = detect_line_segments(cropped_img)
+    line_segs_img = display_lines(image, line_segs)
+    display_still("detected lines", line_segs_img)
 
-display_still("cropped image", cropped_img)
+    lane_lines = average_slope_intercept(image, line_segs)
+    lane_lines_img = display_lines(image, lane_lines)
+    display_still("lane lines", lane_lines_img)
 
-line_segs = detect_line_segments(cropped_img)
-line_segs_img = display_lines(image, line_segs)
-display_still("detected lines", line_segs_img)
+    height, width, _ = image.shape
 
-lane_lines = average_slope_intercept(image, line_segs)
-lane_lines_img = display_lines(image, lane_lines)
-display_still("lane lines", lane_lines_img)
+    if len(lane_lines) == 2:
+        # detected 2 lane lines
+        print('identified 2 lane lines')
+        _, _, left_x2, _ = lane_lines[0][0]
+        _, _, right_x2, _ = lane_lines[1][0]
+        mid = int(width / 2)
+        x_offset = (left_x2 + right_x2) / 2 - mid
+        y_offset = int(height / 2)
+    elif len(lane_lines) == 1:
+        # only detected 1 lane line
+        print('identified 1 lane lines')
+        x1, _, x2, _ = lane_lines[0][0]
+        x_offset = x2 - x1
+        y_offset = int(height / 2)
 
-height, width, _ = image.shape
+    if len(lane_lines) == 1 or len(lane_lines) == 2:
+        new_steering_angle = calculate_steering_angle(x_offset, y_offset)
+        new_stable_steering_angle = stabilize_steering_angle(cur_steering_angle, new_steering_angle, len(lane_lines))
+        
+        print('current steering angle: ', cur_steering_angle)
+        print('new steering angle: ', new_steering_angle)
+        print('new stable steering angle: ', new_stable_steering_angle)
 
-if len(lane_lines) == 2:
-    # detected 2 lane lines
-    print('identified 2 lane lines')
-    _, _, left_x2, _ = lane_lines[0][0]
-    _, _, right_x2, _ = lane_lines[1][0]
-    mid = int(width / 2)
-    x_offset = (left_x2 + right_x2) / 2 - mid
-    y_offset = int(height / 2)
-elif len(lane_lines) == 1:
-    # only detected 1 lane line
-    print('identified 1 lane lines')
-    x1, _, x2, _ = lane_lines[0][0]
-    x_offset = x2 - x1
-    y_offset = int(height / 2)
+        if new_stable_steering_angle >= 88 and new_stable_steering_angle <= 92:
+            # desired heading is pretty straight
+            print('going straight')
+        elif new_stable_steering_angle > 45 and new_stable_steering_angle < 87:
+            print('turning left')
+        elif new_stable_steering_angle > 93 and new_stable_steering_angle < 135:
+            print('turning right')
+        else:
+            print('invalid new stable steering angle: ', new_stable_steering_angle)
+        
+        heading_img = display_heading_line(lane_lines_img, new_stable_steering_angle)
+        display_still("heading", heading_img)
 
-if len(lane_lines) == 1 or len(lane_lines) == 2:
-    new_steering_angle = calculate_steering_angle(x_offset, y_offset)
-    new_stable_steering_angle = stabilize_steering_angle(cur_steering_angle, new_steering_angle, len(lane_lines))
-    
-    print('current steering angle: ', cur_steering_angle)
-    print('new steering angle: ', new_steering_angle)
-    print('new stable steering angle: ', new_stable_steering_angle)
-
-    if new_stable_steering_angle >= 88 and new_stable_steering_angle <= 92:
-        # desired heading is pretty straight
-        print('going straight')
-    elif new_stable_steering_angle > 45 and new_stable_steering_angle < 87:
-        print('turning left')
-    elif new_stable_steering_angle > 93 and new_stable_steering_angle < 135:
-        print('turning right')
+        cur_steering_angle = new_stable_steering_angle
     else:
-        print('invalid new stable steering angle: ', new_stable_steering_angle)
-    
-    heading_img = display_heading_line(lane_lines_img, new_stable_steering_angle)
-    display_still("heading", heading_img)
+        print('identified an invalid number of lane lines', len(lane_lines), ', discarding this frame' )
 
-    cur_steering_angle = new_stable_steering_angle
-else:
-    print('identified an invalid number of lane lines', len(lane_lines), ', discarding this frame' )
+    write_still("gray.png", gray)
+    write_still("masked_edges.png", masked_edges)
+    write_still("cropped.png", cropped_img)
+    write_still("original.png", image)
+    write_still("detected_lines.png", line_segs_img)
+    write_still("lane_lines.png", lane_lines_img)
+    write_still("heading_img.png", heading_img)
 
-write_still("gray.png", gray)
-write_still("masked_edges.png", masked_edges)
-write_still("cropped.png", cropped_img)
-write_still("original.png", image)
-write_still("detected_lines.png", line_segs_img)
-write_still("lane_lines.png", lane_lines_img)
-write_still("heading_img.png", heading_img)
-cv2.waitKey(0)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        cleanup()
+        break
+
