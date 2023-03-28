@@ -184,12 +184,18 @@ def get_wheel_speeds(goal_steer_angle):
     elif( goal_steer_angle < 88 ):
         # need to turn left
         print('going left')
-        speed = ( ( slope * ( 87 - goal_steer_angle ) ) - target_speed )
+        slope_x_error = slope * ( 87 - goal_steer_angle )
+        print('slope * error = ', slope_x_error )
+        print('slope * error - target_speed = ', slope_x_error - target_speed) 
+        speed = int( slope_x_error - target_speed )
         return (speed, speed, target_speed, target_speed)
     else:
         # need to turn right
         print('going right')
-        speed = ( slope * ( goal_steer_angle - 93 ) - target_speed )
+        slope_x_error = slope * (goal_steer_angle - 93)
+        print('slope * error = ', slope_x_error)
+        print('slope * error - target_speed = ', slope_x_error - target_speed)
+        speed = int( slope_x_error - target_speed )
         return (target_speed, target_speed, speed, speed)
     return
 
@@ -288,7 +294,12 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 
         if new_stable_steering_angle >= 0 and new_stable_steering_angle <= 180:
             # desired heading is pretty straight  
-            PWM.setMotorModel(get_wheel_speeds())
+            fl_speed, bl_speed, fr_speed, br_speed = get_wheel_speeds(new_stable_steering_angle) 
+            print('Front left speed: ', fl_speed)
+            print('Back left speed: ', bl_speed)
+            print('Front right speed: ', fr_speed)
+            print('Back right speed: ', br_speed)
+            PWM.setMotorModel(fl_speed, bl_speed, fr_speed, br_speed)
         else:
             print('invalid new stable steering angle: ', new_stable_steering_angle)
 
