@@ -54,6 +54,9 @@ def make_points(frame, line):
     y2 = int(y1 * crop_ratio)  # make points from middle of the frame down
 
     # bound the coordinates within the frame
+    if slope < 0.005:
+        slope = 0.005
+
     x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
     x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
     return [[x1, y1, x2, y2]]
@@ -136,8 +139,8 @@ def stabilize_steering_angle(
           curr_steering_angle, 
           new_steering_angle, 
           num_of_lane_lines, 
-          max_angle_deviation_two_lines=5, 
-          max_angle_deviation_one_lane=1):
+          max_angle_deviation_two_lines=40, 
+          max_angle_deviation_one_lane=25):
     """
     Using last steering angle to stabilize the steering angle
     if new angle is too different from current angle, 
@@ -197,14 +200,18 @@ camera = PiCamera()
 camera.resolution = (640, 480)
 camera.framerate = 32
 rawCapture = PiRGBArray(camera, size=(640, 480))
-
+heading_error = 0
+target_speed = -2000
+wheel_speed_min = -350
 # allow the camera to warmup
-time.sleep(0.1)
+time.sleep(1)
+
+lastFrameTime = time.time()
 
 frame = PiRGBArray(camera, size = (640,480))
 PWM= Motor.Motor()
-PWM.setMotorModel(0,0,0,0)
-
+PWM.setMotorModel(-350,-350,-350,-350)
+#PWM.setMotorModel(-2000,-2000,0,0)
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
     image = frame.array
@@ -231,7 +238,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     display_still("detected lines", line_segs_img)
 
     lane_lines = average_slope_intercept(image, line_segs)
-    lane_lines_img = display_lines(image, lane_lines)
+    lane_lines_img = display_lines(line_segs_img, lane_lines, (255, 0, 255))
     display_still("lane lines", lane_lines_img)
 
     height, width, _ = image.shape
@@ -262,32 +269,35 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         if new_stable_steering_angle >= 88 and new_stable_steering_angle <= 92:
             # desired heading is pretty straight
             print('going straight')
-            PWM.setMotorModel(-750,-750,-750,-750)
-        elif new_stable_steering_angle > 45 and new_stable_steering_angle < 87:
+            PWM.setMotorModel(-2000,-2000,-2000,-2000)
+        elif new_stable_steering_angle > 0 and new_stable_steering_angle < 87:
             print('turning left')
-            PWM.setMotorModel(-100,-100,-750,-750)       #Left 
+            #PWM.setMotorModel(0,0,-2000,-2000)       #Left 
         elif new_stable_steering_angle > 93 and new_stable_steering_angle < 135:
             print('turning right')
-            PWM.setMotorModel(-750,-750,-100,-100)       #Right 
+            #PWM.setMotorModel(-2000,-2000,0,-0)       #Right 
         else:
             print('invalid new stable steering angle: ', new_stable_steering_angle)
 
-        heading_img = display_heading_line(line_segs_img, new_stable_steering_angle)
+        heading_img = display_heading_line(lane_lines_img, new_stable_steering_angle)
         display_still("heading", heading_img)
 
         cur_steering_angle = new_stable_steering_angle
+        if( time.time() - lastFrameTime >= (1/30) ):
+            lastFrameTime = time.time()
+            cv2.imshow('heading', heading_img)
     else:
         print('identified an invalid number of lane lines', len(lane_lines), ', discarding this frame' )
 
-    write_still("gray.png", gray)
-    write_still("masked_edges.png", masked_edges)
-    write_still("cropped.png", cropped_img)
-    write_still("original.png", image)
-    write_still("detected_lines.png", line_segs_img)
-    write_still("lane_lines.png", lane_lines_img)
-    write_still("heading_img.png", heading_img)
+    #write_still("gray.png", gray)
+    #write_still("masked_edges.png", masked_edges)
+    #write_still("cropped.png", cropped_img)
+    #write_still("original.png", image)
+    #write_still("detected_lines.png", line_segs_img)
+    #write_still("lane_lines.png", lane_lines_img)
+    #write_still("heading_img.png", heading_img)
 
-    cv2.imshow('heading', heading_img)
+
     frame.truncate(0)
 
     if cv2.waitKey(1) & 0xFF == ord('q'): #or keyboard.is_pressed("q"):
