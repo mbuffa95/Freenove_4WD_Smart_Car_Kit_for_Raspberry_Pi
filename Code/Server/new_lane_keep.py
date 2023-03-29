@@ -185,17 +185,19 @@ def get_wheel_speeds(goal_steer_angle):
         # need to turn left
         print('going left')
         slope_x_error = slope * ( 87 - goal_steer_angle )
+        print('slope =', slope)
         print('slope * error = ', slope_x_error )
-        print('slope * error - target_speed = ', slope_x_error - target_speed) 
-        speed = int( slope_x_error - target_speed )
+        print('slope * error - target_speed = ', slope_x_error + target_speed) 
+        speed = int( slope_x_error + target_speed )
         return (speed, speed, target_speed, target_speed)
     else:
         # need to turn right
         print('going right')
+        print('slope')
         slope_x_error = slope * (goal_steer_angle - 93)
         print('slope * error = ', slope_x_error)
-        print('slope * error - target_speed = ', slope_x_error - target_speed)
-        speed = int( slope_x_error - target_speed )
+        print('slope * error - target_speed = ', slope_x_error + target_speed)
+        speed = int( slope_x_error + target_speed )
         return (target_speed, target_speed, speed, speed)
     return
 
@@ -236,7 +238,7 @@ lastFrameTime = time.time()
 
 frame = PiRGBArray(camera, size = (640,480))
 PWM= Motor.Motor()
-PWM.setMotorModel(-350,-350,-350,-350)
+#PWM.setMotorModel(-350,-350,-350,-350)
 #PWM.setMotorModel(-2000,-2000,0,0)
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
@@ -299,7 +301,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
             print('Back left speed: ', bl_speed)
             print('Front right speed: ', fr_speed)
             print('Back right speed: ', br_speed)
-            PWM.setMotorModel(fl_speed, bl_speed, fr_speed, br_speed)
+            #PWM.setMotorModel(fl_speed, bl_speed, fr_speed, br_speed)
         else:
             print('invalid new stable steering angle: ', new_stable_steering_angle)
 
