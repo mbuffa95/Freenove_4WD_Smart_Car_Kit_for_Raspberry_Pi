@@ -12,7 +12,7 @@ import servo
 import Motor
 #import keyboard
 
-target_speed = -2000
+target_speed = -1500
 wheel_speed_min = -350 # the speed at which the wheel stop spinning
 err_at_wheel_speed_min = 40
 slope = (wheel_speed_min - target_speed) / err_at_wheel_speed_min
@@ -301,7 +301,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
             print('Back left speed: ', bl_speed)
             print('Front right speed: ', fr_speed)
             print('Back right speed: ', br_speed)
-            #PWM.setMotorModel(fl_speed, bl_speed, fr_speed, br_speed)
+            PWM.setMotorModel(fl_speed, bl_speed, fr_speed, br_speed)
         else:
             print('invalid new stable steering angle: ', new_stable_steering_angle)
 
