@@ -59,8 +59,8 @@ def make_points(frame, line):
     y2 = int(y1 * crop_ratio)  # make points from middle of the frame down
 
     # bound the coordinates within the frame
-    if slope < 0.005:
-        slope = 0.005
+    #if slope < 0.005:
+    #    slope = 0.005
 
     x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
     x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
@@ -81,7 +81,7 @@ def average_slope_intercept(frame, line_segments):
     left_fit = []
     right_fit = []
 
-    boundary = 1/3
+    boundary = 1/2
     left_region_boundary = width * (1 - boundary)  # left lane line segment should be on left 2/3 of the screen
     right_region_boundary = width * boundary # right lane line segment should be on left 2/3 of the screen
 
@@ -311,7 +311,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         cur_steering_angle = new_stable_steering_angle
         if( time.time() - lastFrameTime >= (1/30) ):
             lastFrameTime = time.time()
-            cv2.imshow('heading', heading_img)
+            cv2.imshow('detected lines', lane_lines_img)
     else:
         print('identified an invalid number of lane lines', len(lane_lines), ', discarding this frame' )
 
