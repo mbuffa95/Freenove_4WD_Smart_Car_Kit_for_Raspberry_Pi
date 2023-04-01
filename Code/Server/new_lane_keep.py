@@ -63,9 +63,9 @@ def make_points(frame, line):
     if slope != 0:
         x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
         x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
-        return [[x1, y1, x2, y2], True]
+        return [[x1, y1, x2, y2]], True
     else:
-        return [[x1, y1, x2, y2], False]
+        return [[x1, y1, x2, y2]], False
 
 def average_slope_intercept(frame, line_segments):
     """
@@ -103,16 +103,16 @@ def average_slope_intercept(frame, line_segments):
 
     left_fit_average = np.average(left_fit, axis=0)
     if len(left_fit) > 0:
-        x1, y1, x2, y2, success = make_points(frame, left_fit_average)
+        [[x1, y1, x2, y2]], success = make_points(frame, left_fit_average)
         if success:
-            lane_lines.append(x1, y1, x2, y2)
+            lane_lines.append([[x1, y1, x2, y2]])
         else:
             return lane_lines, False
     right_fit_average = np.average(right_fit, axis=0)
     if len(right_fit) > 0:
-        x1, y1, x2, y2, success = make_points(frame, right_fit_average))
+        [[x1, y1, x2, y2]], success = make_points(frame, right_fit_average)
         if success:
-            lane_lines.append(x1, y1, x2, y2)
+            lane_lines.append([[x1, y1, x2, y2]])
         else:
             return lane_lines, False
     logging.debug('lane lines: %s' % lane_lines)  # [[[316, 720, 484, 432]], [[1009, 720, 718, 432]]]
