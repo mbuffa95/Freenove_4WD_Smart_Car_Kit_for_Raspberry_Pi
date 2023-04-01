@@ -17,9 +17,9 @@ max_speed = 1000
 wheel_speed_min = 350 # the speed at which the wheel stop spinning
 
 min_for_speed = 400
-min_rev_speed = 600
+min_rev_speed = 800
 
-change_dir_err = 22
+change_dir_err = 33
 full_rev_err = 90
 
 
