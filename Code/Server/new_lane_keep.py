@@ -14,7 +14,7 @@ import Motor
 
 target_speed = -1000
 wheel_speed_min = -350 # the speed at which the wheel stop spinning
-err_at_wheel_speed_min = 40
+err_at_wheel_speed_min = 45
 slope = (wheel_speed_min - target_speed) / err_at_wheel_speed_min
 
 def region_of_interest(edges):
@@ -144,8 +144,8 @@ def stabilize_steering_angle(
           curr_steering_angle, 
           new_steering_angle, 
           num_of_lane_lines, 
-          max_angle_deviation_two_lines=40, 
-          max_angle_deviation_one_lane=25):
+          max_angle_deviation_two_lines=60, 
+          max_angle_deviation_one_lane=40):
     """
     Using last steering angle to stabilize the steering angle
     if new angle is too different from current angle, 
