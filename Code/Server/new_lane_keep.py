@@ -12,7 +12,7 @@ import servo
 import Motor
 #import keyboard
 
-target_speed = -1500
+target_speed = -1000
 wheel_speed_min = -350 # the speed at which the wheel stop spinning
 err_at_wheel_speed_min = 40
 slope = (wheel_speed_min - target_speed) / err_at_wheel_speed_min
