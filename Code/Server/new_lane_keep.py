@@ -63,9 +63,9 @@ def make_points(frame, line):
     if slope != 0:
         x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
         x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
-    	return [[x1, y1, x2, y2], true]
+        return [[x1, y1, x2, y2], True]
     else:
-        return [[x1, y1, x2, y2], false]
+        return [[x1, y1, x2, y2], False]
 
 def average_slope_intercept(frame, line_segments):
     """
@@ -76,7 +76,7 @@ def average_slope_intercept(frame, line_segments):
     lane_lines = []
     if line_segments is None:
         logging.info('No line_segment segments detected')
-        return lane_lines
+        return lane_lines, False
 
     height, width, _ = frame.shape
     left_fit = []
@@ -107,17 +107,17 @@ def average_slope_intercept(frame, line_segments):
         if success:
             lane_lines.append(x1, y1, x2, y2)
         else:
-            return lane_lines, false
+            return lane_lines, False
     right_fit_average = np.average(right_fit, axis=0)
     if len(right_fit) > 0:
         x1, y1, x2, y2, success = make_points(frame, right_fit_average))
         if success:
             lane_lines.append(x1, y1, x2, y2)
         else:
-            return lane_lines, false
+            return lane_lines, False
     logging.debug('lane lines: %s' % lane_lines)  # [[[316, 720, 484, 432]], [[1009, 720, 718, 432]]]
 
-    return lane_lines, true
+    return lane_lines, True
 
 def calculate_steering_angle(x_offset, y_offset):
     angle_to_mid_radian = math.atan(x_offset / y_offset)  # angle (in radian) to center vertical line
@@ -308,55 +308,56 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     lane_lines, success = average_slope_intercept(image, line_segs)
 
     if success: 
+        lane_lines_img = display_lines(line_segs_img, lane_lines, (255, 0, 255))
+        display_still("lane lines", lane_lines_img)
 
-    lane_lines_img = display_lines(line_segs_img, lane_lines, (255, 0, 255))
-    display_still("lane lines", lane_lines_img)
+        height, width, _ = image.shape
 
-    height, width, _ = image.shape
+        if len(lane_lines) == 2:
+            # detected 2 lane lines
+            print('identified 2 lane lines')
+            _, _, left_x2, _ = lane_lines[0][0]
+            _, _, right_x2, _ = lane_lines[1][0]
+            mid = int(width / 2)
+            x_offset = (left_x2 + right_x2) / 2 - mid
+            y_offset = int(height / 2)
+        elif len(lane_lines) == 1:
+            # only detected 1 lane line
+            print('identified 1 lane lines')
+            x1, _, x2, _ = lane_lines[0][0]
+            x_offset = x2 - x1
+            y_offset = int(height / 2)
 
-    if len(lane_lines) == 2:
-        # detected 2 lane lines
-        print('identified 2 lane lines')
-        _, _, left_x2, _ = lane_lines[0][0]
-        _, _, right_x2, _ = lane_lines[1][0]
-        mid = int(width / 2)
-        x_offset = (left_x2 + right_x2) / 2 - mid
-        y_offset = int(height / 2)
-    elif len(lane_lines) == 1:
-        # only detected 1 lane line
-        print('identified 1 lane lines')
-        x1, _, x2, _ = lane_lines[0][0]
-        x_offset = x2 - x1
-        y_offset = int(height / 2)
+        if len(lane_lines) == 1 or len(lane_lines) == 2:
+            new_steering_angle = calculate_steering_angle(x_offset, y_offset)
+            new_stable_steering_angle = stabilize_steering_angle(cur_steering_angle, new_steering_angle, len(lane_lines))
+            
+            print('current steering angle: ', cur_steering_angle)
+            print('new steering angle: ', new_steering_angle)
+            print('new stable steering angle: ', new_stable_steering_angle)
 
-    if len(lane_lines) == 1 or len(lane_lines) == 2:
-        new_steering_angle = calculate_steering_angle(x_offset, y_offset)
-        new_stable_steering_angle = stabilize_steering_angle(cur_steering_angle, new_steering_angle, len(lane_lines))
-        
-        print('current steering angle: ', cur_steering_angle)
-        print('new steering angle: ', new_steering_angle)
-        print('new stable steering angle: ', new_stable_steering_angle)
+            if new_stable_steering_angle >= 0 and new_stable_steering_angle <= 180:
+                # desired heading is pretty straight  
+                fl_speed, bl_speed, fr_speed, br_speed = get_wheel_speeds(new_stable_steering_angle) 
+                print('Front left speed: ', fl_speed)
+                print('Back left speed: ', bl_speed)
+                print('Front right speed: ', fr_speed)
+                print('Back right speed: ', br_speed)
+                PWM.setMotorModel(fl_speed, bl_speed, fr_speed, br_speed)
+            else:
+                print('invalid new stable steering angle: ', new_stable_steering_angle)
 
-        if new_stable_steering_angle >= 0 and new_stable_steering_angle <= 180:
-            # desired heading is pretty straight  
-            fl_speed, bl_speed, fr_speed, br_speed = get_wheel_speeds(new_stable_steering_angle) 
-            print('Front left speed: ', fl_speed)
-            print('Back left speed: ', bl_speed)
-            print('Front right speed: ', fr_speed)
-            print('Back right speed: ', br_speed)
-            PWM.setMotorModel(fl_speed, bl_speed, fr_speed, br_speed)
+            heading_img = display_heading_line(lane_lines_img, new_stable_steering_angle)
+            display_still("heading", heading_img)
+
+            cur_steering_angle = new_stable_steering_angle
+            if( time.time() - lastFrameTime >= (1/30) ):
+                lastFrameTime = time.time()
+                cv2.imshow('detected lines', lane_lines_img)
         else:
-            print('invalid new stable steering angle: ', new_stable_steering_angle)
-
-        heading_img = display_heading_line(lane_lines_img, new_stable_steering_angle)
-        display_still("heading", heading_img)
-
-        cur_steering_angle = new_stable_steering_angle
-        if( time.time() - lastFrameTime >= (1/30) ):
-            lastFrameTime = time.time()
-            cv2.imshow('detected lines', lane_lines_img)
+            print('identified an invalid number of lane lines', len(lane_lines), ', discarding this frame' )
     else:
-        print('identified an invalid number of lane lines', len(lane_lines), ', discarding this frame' )
+        print('failed to average lines, skipping this frame')
 
     #write_still("gray.png", gray)
     #write_still("masked_edges.png", masked_edges)
