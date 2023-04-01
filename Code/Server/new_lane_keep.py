@@ -12,10 +12,11 @@ import servo
 import Motor
 #import keyboard
 
-target_speed = -1000
-wheel_speed_min = -350 # the speed at which the wheel stop spinning
-err_at_wheel_speed_min = 45
-slope = (wheel_speed_min - target_speed) / err_at_wheel_speed_min
+max_speed = 1000
+wheel_speed_min = 350 # the speed at which the wheel stop spinning
+change_dir_err = 22
+
+slope = (max_speed - wheel_speed_min) / change_dir_err
 
 def region_of_interest(edges):
    height, width = edges.shape
@@ -180,26 +181,57 @@ def write_still(file_name, frame):
 def get_wheel_speeds(goal_steer_angle):
     if( goal_steer_angle >= 88 and goal_steer_angle <= 92 ):
         print('going straight')
-        return (target_speed, target_speed, target_speed, target_speed)
+        return (-max_speed, -max_speed, -max_speed, -max_speed)
     elif( goal_steer_angle < 88 ):
         # need to turn left
         print('going left')
-        slope_x_error = slope * ( 87 - goal_steer_angle )
-        print('slope =', slope)
-        print('slope * error = ', slope_x_error )
-        print('slope * error - target_speed = ', slope_x_error + target_speed) 
-        speed = int( slope_x_error + target_speed )
-        return (speed, speed, target_speed, target_speed)
+        err = 87 - goal_steer_angle
+
+        if err < change_dir_err:
+            # keep turning the left wheels in the same direction, but at a slower rate
+            slope_x_error = slope * err
+            print('both wheels turning same direction')
+            print('slope =', slope)
+            print('slope * error = ', slope_x_error )
+            print('slope * error - b = ', slope_x_error + (-max_speed)) 
+            speed = int(slope_x_error + (-max_speed))
+            return (speed, speed, -max_speed, -max_speed)
+        else:
+            # turn the wheel in the opposite direction to turn sharper
+            print('left wheels spinning opposite!!!')
+            slope_x_error = slope * err
+            b = (wheel_speed_min/(slope*change_dir_err))
+            print('slope =', slope)
+            print('slope * error = ', slope_x_error )
+            print('slope * error - b = ', slope_x_error + b) 
+            speed = int(slope_x_error + b)
+            return (speed, speed, -max_speed, -max_speed)
+
     else:
         # need to turn right
         print('going right')
-        print('slope')
-        slope_x_error = slope * (goal_steer_angle - 93)
-        print('slope * error = ', slope_x_error)
-        print('slope * error - target_speed = ', slope_x_error + target_speed)
-        speed = int( slope_x_error + target_speed )
-        return (target_speed, target_speed, speed, speed)
-    return
+        err = goal_steer_angle - 93
+        
+        if err < change_dir_err:
+            # keep turning the left wheels in the same direction, but at a slower rate
+            print('both wheels turning same direction')
+            slope_x_error = slope * err
+            print('slope =', slope)
+            print('slope * error = ', slope_x_error )
+            print('slope * error - b = ', slope_x_error + (-max_speed)) 
+            speed = int(slope_x_error + (-max_speed))
+            return (speed, speed, -max_speed, -max_speed)
+        else:
+            # turn the wheel in the opposite direction to turn sharper
+            print('right wheels spinning opposite!!!')
+            slope_x_error = slope * err
+            b = (wheel_speed_min/(slope*change_dir_err))
+            print('slope =', slope)
+            print('slope * error = ', slope_x_error )
+            print('slope * error - b = ', slope_x_error + b) 
+            speed = int(slope_x_error + b)
+            return (-max_speed, -max_speed, speed, speed)
+
 
 def cleanup():
     """ Reset the hardware"""
