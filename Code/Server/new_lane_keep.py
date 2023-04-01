@@ -13,10 +13,15 @@ import Motor
 #import keyboard
 
 max_speed = 1000
-wheel_speed_min = 350 # the speed at which the wheel stop spinning
-change_dir_err = 22
 
-slope = (max_speed - wheel_speed_min) / change_dir_err
+wheel_speed_min = 350 # the speed at which the wheel stop spinning
+
+min_for_speed = 400
+min_rev_speed = 600
+
+change_dir_err = 22
+full_rev_err = 90
+
 
 def region_of_interest(edges):
    height, width = edges.shape
@@ -196,6 +201,7 @@ def get_wheel_speeds(goal_steer_angle):
 
         if err < change_dir_err:
             # keep turning the left wheels in the same direction, but at a slower rate
+            slope = ((-min_for_speed)+max_speed)/change_dir_err
             slope_x_error = slope * err
             print('both wheels turning same direction')
             print('slope =', slope)
@@ -206,6 +212,7 @@ def get_wheel_speeds(goal_steer_angle):
         else:
             # turn the wheel in the opposite direction to turn sharper
             print('left wheels spinning opposite!!!')
+            slope = ( ( max_speed - min_rev_speed ) / ( full_rev_err - change_dir_err ) )
             slope_x_error = slope * err
             b = (wheel_speed_min/(slope*change_dir_err))
             print('slope =', slope)
@@ -223,6 +230,7 @@ def get_wheel_speeds(goal_steer_angle):
         if err < change_dir_err:
             # keep turning the left wheels in the same direction, but at a slower rate
             print('both wheels turning same direction')
+            slope = ((-min_for_speed)+max_speed)/change_dir_err
             slope_x_error = slope * err
             print('slope =', slope)
             print('slope * error = ', slope_x_error )
@@ -232,6 +240,7 @@ def get_wheel_speeds(goal_steer_angle):
         else:
             # turn the wheel in the opposite direction to turn sharper
             print('right wheels spinning opposite!!!')
+            slope = ( ( max_speed - min_rev_speed ) / ( full_rev_err - change_dir_err ) )
             slope_x_error = slope * err
             b = (wheel_speed_min/(slope*change_dir_err))
             print('slope =', slope)
