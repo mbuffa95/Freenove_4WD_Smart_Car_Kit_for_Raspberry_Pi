@@ -60,12 +60,12 @@ def make_points(frame, line):
     y2 = int(y1 * crop_ratio)  # make points from middle of the frame down
 
     # bound the coordinates within the frame
-    #if slope < 0.005:
-    #    slope = 0.005
-
-    x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
-    x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
-    return [[x1, y1, x2, y2]]
+    if slope != 0:
+        x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
+        x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
+    	return [[x1, y1, x2, y2], true]
+    else:
+        return [[x1, y1, x2, y2], false]
 
 def average_slope_intercept(frame, line_segments):
     """
@@ -103,15 +103,21 @@ def average_slope_intercept(frame, line_segments):
 
     left_fit_average = np.average(left_fit, axis=0)
     if len(left_fit) > 0:
-        lane_lines.append(make_points(frame, left_fit_average))
-
+        x1, y1, x2, y2, success = make_points(frame, left_fit_average)
+        if success:
+            lane_lines.append(x1, y1, x2, y2)
+        else:
+            return lane_lines, false
     right_fit_average = np.average(right_fit, axis=0)
     if len(right_fit) > 0:
-        lane_lines.append(make_points(frame, right_fit_average))
-
+        x1, y1, x2, y2, success = make_points(frame, right_fit_average))
+        if success:
+            lane_lines.append(x1, y1, x2, y2)
+        else:
+            return lane_lines, false
     logging.debug('lane lines: %s' % lane_lines)  # [[[316, 720, 484, 432]], [[1009, 720, 718, 432]]]
 
-    return lane_lines
+    return lane_lines, true
 
 def calculate_steering_angle(x_offset, y_offset):
     angle_to_mid_radian = math.atan(x_offset / y_offset)  # angle (in radian) to center vertical line
@@ -186,6 +192,7 @@ def get_wheel_speeds(goal_steer_angle):
         # need to turn left
         print('going left')
         err = 87 - goal_steer_angle
+        print('err: ', err)
 
         if err < change_dir_err:
             # keep turning the left wheels in the same direction, but at a slower rate
@@ -211,7 +218,8 @@ def get_wheel_speeds(goal_steer_angle):
         # need to turn right
         print('going right')
         err = goal_steer_angle - 93
-        
+        print('err: ', err)
+
         if err < change_dir_err:
             # keep turning the left wheels in the same direction, but at a slower rate
             print('both wheels turning same direction')
@@ -220,7 +228,7 @@ def get_wheel_speeds(goal_steer_angle):
             print('slope * error = ', slope_x_error )
             print('slope * error - b = ', slope_x_error + (-max_speed)) 
             speed = int(slope_x_error + (-max_speed))
-            return (speed, speed, -max_speed, -max_speed)
+            return (-max_speed, -max_speed, speed, speed)
         else:
             # turn the wheel in the opposite direction to turn sharper
             print('right wheels spinning opposite!!!')
@@ -297,7 +305,10 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     line_segs_img = display_lines(image, line_segs)
     display_still("detected lines", line_segs_img)
 
-    lane_lines = average_slope_intercept(image, line_segs)
+    lane_lines, success = average_slope_intercept(image, line_segs)
+
+    if success: 
+
     lane_lines_img = display_lines(line_segs_img, lane_lines, (255, 0, 255))
     display_still("lane lines", lane_lines_img)
 
