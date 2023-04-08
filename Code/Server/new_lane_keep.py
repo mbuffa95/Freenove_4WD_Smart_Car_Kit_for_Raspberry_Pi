@@ -12,14 +12,14 @@ import servo
 import Motor
 #import keyboard
 
-max_speed = 1000
+max_speed = 800
 
-wheel_speed_min = 350 # the speed at which the wheel stop spinning
+#wheel_speed_min = 350 # the speed at which the wheel stop spinning
 
-min_for_speed = 400
-min_rev_speed = 800
+min_for_speed = 350
+min_rev_speed = 700
 
-change_dir_err = 33
+change_dir_err = 30
 full_rev_err = 90
 
 
@@ -70,7 +70,7 @@ def make_points(frame, line):
         x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
         return [[x1, y1, x2, y2]], True
     else:
-        return [[x1, y1, x2, y2]], False
+        return [[0, 0, 0, 0]], False
 
 def average_slope_intercept(frame, line_segments):
     """
@@ -156,8 +156,8 @@ def stabilize_steering_angle(
           curr_steering_angle, 
           new_steering_angle, 
           num_of_lane_lines, 
-          max_angle_deviation_two_lines=60, 
-          max_angle_deviation_one_lane=40):
+          max_angle_deviation_two_lines=70, 
+          max_angle_deviation_one_lane=50):
     """
     Using last steering angle to stabilize the steering angle
     if new angle is too different from current angle, 
@@ -214,7 +214,7 @@ def get_wheel_speeds(goal_steer_angle):
             print('left wheels spinning opposite!!!')
             slope = ( ( max_speed - min_rev_speed ) / ( full_rev_err - change_dir_err ) )
             slope_x_error = slope * err
-            b = (wheel_speed_min/(slope*change_dir_err))
+            b = (min_rev_speed/(slope*change_dir_err))
             print('slope =', slope)
             print('slope * error = ', slope_x_error )
             print('slope * error - b = ', slope_x_error + b) 
@@ -242,7 +242,7 @@ def get_wheel_speeds(goal_steer_angle):
             print('right wheels spinning opposite!!!')
             slope = ( ( max_speed - min_rev_speed ) / ( full_rev_err - change_dir_err ) )
             slope_x_error = slope * err
-            b = (wheel_speed_min/(slope*change_dir_err))
+            b = (min_rev_speed/(slope*change_dir_err))
             print('slope =', slope)
             print('slope * error = ', slope_x_error )
             print('slope * error - b = ', slope_x_error + b) 
@@ -287,7 +287,7 @@ lastFrameTime = time.time()
 
 frame = PiRGBArray(camera, size = (640,480))
 PWM= Motor.Motor()
-#PWM.setMotorModel(-350,-350,-350,-350)
+#PWM.setMotorModel(-2000,-2000,500,500)
 #PWM.setMotorModel(-2000,-2000,0,0)
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
@@ -337,7 +337,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
             x_offset = x2 - x1
             y_offset = int(height / 2)
 
-        if len(lane_lines) == 1 or len(lane_lines) == 2:
+        if len(lane_lines) == 2 or len(lane_lines) == 1:
             new_steering_angle = calculate_steering_angle(x_offset, y_offset)
             new_stable_steering_angle = stabilize_steering_angle(cur_steering_angle, new_steering_angle, len(lane_lines))
             
@@ -362,7 +362,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
             cur_steering_angle = new_stable_steering_angle
             if( time.time() - lastFrameTime >= (1/30) ):
                 lastFrameTime = time.time()
-                cv2.imshow('detected lines', lane_lines_img)
+                cv2.imshow('detected lines', heading_img)
         else:
             print('identified an invalid number of lane lines', len(lane_lines), ', discarding this frame' )
     else:

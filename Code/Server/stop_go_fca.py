@@ -8,7 +8,7 @@ import math
 import logging
 import servo
 import Motor
-import Ultrasonic
+from Ultrasonic import *
 
 target_speed = 1000
 
