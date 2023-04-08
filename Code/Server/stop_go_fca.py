@@ -10,12 +10,12 @@ import servo
 from Motor import *
 from Ultrasonic import *
 
-target_speed = -500
+target_speed = -800
 slow_speed = int( ( target_speed ) * 0.5 )
 num_readings_to_avg = 5
 
-stop_dist = 10
-slow_dist = 35
+stop_dist = 15
+slow_dist = 40
 
 ultrasonic=Ultrasonic()
 PWM= Motor()
