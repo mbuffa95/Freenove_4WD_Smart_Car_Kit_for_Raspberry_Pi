@@ -11,7 +11,7 @@ from Motor import *
 from Ultrasonic import *
 
 target_dist = 30
-kp = 0.1
+kp = 6
 
 max_speed = -800
 initial_speed = int( max_speed * 0.75 )
@@ -46,7 +46,7 @@ try:
       if( ( curr_speed + speed_change ) > max_speed ):
         curr_speed = max_speed # cap that speed to the max
       else: 
-        curr_speed = ( curr_speed + speed_change )
+        curr_speed = int( curr_speed - speed_change ) # minus will slow it down
 
       print( "Current speed: " + str(curr_speed) )
       PWM.setMotorModel( curr_speed, curr_speed, curr_speed, curr_speed )
